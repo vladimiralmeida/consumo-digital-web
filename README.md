@@ -24,6 +24,9 @@ Abra `index.html` no navegador. Ou, na pasta: `python3 -m http.server 8000` e ac
 ## Ajustes de design
 As cores ficam nas variáveis de `assets/styles.css` (`--primary` etc.). O bordô é uma aproximação; troque pelo tom oficial da UNICAP, se houver manual de identidade. Os textos e dados ficam em `assets/data.js`.
 
+## Para quem vai evoluir o projeto
+Veja `docs/ARQUITETURA.md` (arquitetura e proposta de back-end), `docs/TAREFAS.md` (lista de tarefas) e `CONTRIBUTING.md`.
+
 ## Estrutura
 ```
 index.html
@@ -31,4 +34,5 @@ assets/styles.css
 assets/data.js    (conteúdo)
 assets/app.js     (telas e interações)
 .nojekyll
+docs/ (arquitetura e tarefas)
 ```
