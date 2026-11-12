@@ -1,5 +1,6 @@
 /* Dados do protótipo. Exemplos fictícios; referências normativas conforme o guia do módulo (conferir na fonte). */
 window.DATA = {
+  equipe: ['Edilson Ferreira da Silva', 'Eduardo de Queiroz Chaves', 'Mariana Nunes de Sousa Gaião', 'Mariana Smethurst Nápoles de Medeiros', 'Vladimir Carvalho de Almeida'],
   tipos: [
     { id: 'market', label: 'Golpe em marketplace', status: 'Alcance em construção', title: 'CDC aplicado ao marketplace', text: 'O Tema 987 manda aplicar o CDC aos marketplaces. A mesma tese afasta a responsabilidade objetiva na aplicação do Marco Civil, então o alcance exato fica para a jurisprudência. Se o anúncio fraudulento foi pago ou impulsionado, há presunção relativa de culpa da plataforma, sem necessidade de notificação.' },
     { id: 'conteudo', label: 'Perfil falso ou conteúdo ofensivo', status: 'Depende da data do fato', title: 'Art. 21 do Marco Civil, com exceções', text: 'Para ilícito ou crime de terceiro, a plataforma responde de forma solidária depois de notificada, salvo dúvida razoável sobre a ilicitude. Contas denunciadas como não autênticas seguem a mesma regra. Crime ou ilícito contra a honra continua no art. 19, com remoção possível por notificação extrajudicial.' },

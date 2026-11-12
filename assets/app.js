@@ -58,7 +58,8 @@
       '<div class="card"><h2>Provas a guardar <span style="font-size:14px;font-weight:500;color:var(--muted)">· ' + n + ' de ' + D.provas.length + '</span></h2><div class="list">' +
       D.provas.map(function (p, i) { return check(s.provas[i], p, 'tri-prova', i); }).join('') + '</div></div></section>' +
       '<aside class="side"><div class="card hl"><div class="row" style="margin-bottom:12px"><h2 style="margin:0">' + t.title + '</h2><span class="badge">' + t.status + '</span></div><p class="note">' + t.text + '</p>' +
-      (t.link ? '<p style="margin:14px 0 0"><a class="btn" href="' + t.link + '">Abrir a tela do tema</a></p>' : '') + '</div>' + foot() + '</aside></div>';
+      (t.link ? '<p style="margin:14px 0 0"><a class="btn" href="' + t.link + '">Abrir a tela do tema</a></p>' : '') + '</div>' + foot() +
+      '<section class="card" aria-labelledby="eq"><h2 id="eq" class="sm">Equipe</h2><ul class="tight" style="list-style:none;padding:0;font-size:15px">' + D.equipe.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul></section></aside></div>';
   };
 
   V.diagnostico = function () {
