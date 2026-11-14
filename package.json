@@ -1,0 +1,26 @@
+{
+  "name": "consumo-digital-web",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Consumo Digital: triagem, diagnóstico da opacidade e parecer, com persistência por grupo.",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test --experimental-test-coverage --test-coverage-include=server/** --test-coverage-include=assets/dominio.js \"test/*.test.js\"",
+    "lint": "eslint .",
+    "verificar": "npm run lint && npm test"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "express": "^5.3.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0"
+  }
+}

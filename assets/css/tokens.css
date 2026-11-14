@@ -1,0 +1,118 @@
+/*
+ * Tokens de design. Toda cor, tamanho de texto, raio e espaçamento do site sai daqui.
+ * Contraste calculado (WCAG) ao lado de cada cor de texto; mínimo usado: 4,5:1 para texto
+ * e 3:1 para bordas de controles.
+ */
+:root {
+  color-scheme: light dark;
+
+  /* Superfícies */
+  --fundo: #F2F2F7;
+  --superficie: #FFFFFF;
+  --superficie-2: #EEEEF0;
+  --barra: rgb(249 249 251 / 0.82);
+  --barra-solida: #F9F9FB;
+  --separador: #D1D1D6;
+  --borda-controle: #8E8E93;            /* 3,26:1 sobre a superfície */
+
+  /* Texto */
+  --texto: #1C1C1E;                     /* 15,25:1 sobre o fundo */
+  --texto-2: #5E5E66;                   /* 5,76:1 sobre o fundo; 6,42:1 sobre a superfície */
+
+  /* Destaque: bordô da UNICAP, reservado a ação principal, seleção e links */
+  --destaque: #7A1F3D;                  /* 10,04:1 sobre a superfície */
+  --destaque-forte: #5A1229;
+  --destaque-preenchido: #7A1F3D;       /* fundo de botão; texto branco a 10,04:1 */
+  --destaque-suave: #F6E8EC;            /* destaque sobre ele: 8,45:1 */
+  --sobre-destaque: #FFFFFF;
+
+  /* Régua de opacidade (0 a 3): uma cor por nota, sempre acompanhada do número */
+  --nota-0-fundo: #E3F3E8; --nota-0-texto: #14532D;   /* 7,92:1 */
+  --nota-1-fundo: #FFF1C2; --nota-1-texto: #6B4E00;   /* 6,86:1 */
+  --nota-2-fundo: #FFDDB5; --nota-2-texto: #7A3E00;   /* 6,46:1 */
+  --nota-3-fundo: #3B0A16; --nota-3-texto: #FFFFFF;   /* 16,92:1 */
+
+  /* Sinais */
+  --aviso-fundo: #FFF6D6; --aviso-texto: #4A3600; --aviso-borda: #E6CF7A;   /* 10,67:1 */
+  --erro: #B3261E;                      /* 6,54:1 */
+  --erro-fundo: #FCEBEA;
+  --sucesso: #1E6B3A;                   /* 6,52:1 */
+
+  /* Tipografia: fonte do sistema, sem arquivos de terceiros */
+  --fonte: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --fonte-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --texto-titulo-grande: clamp(1.75rem, 1.4rem + 1.6vw, 2.125rem);
+  --texto-titulo: 1.375rem;
+  --texto-subtitulo: 1.0625rem;
+  --texto-corpo: 1rem;
+  --texto-apoio: 0.875rem;
+  --texto-legenda: 0.75rem;
+
+  /* Forma e ritmo */
+  --raio-pequeno: 8px;
+  --raio: 12px;
+  --raio-grande: 16px;
+  --espaco-1: 4px;
+  --espaco-2: 8px;
+  --espaco-3: 12px;
+  --espaco-4: 16px;
+  --espaco-5: 24px;
+  --espaco-6: 32px;
+  --espaco-7: 48px;
+  --alvo-minimo: 44px;
+  --largura-maxima: 1280px;
+  --largura-lateral: 232px;
+  --sombra: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.06);
+
+  --duracao: 160ms;
+  --curva: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fundo: #000000;
+    --superficie: #1C1C1E;
+    --superficie-2: #2C2C2E;
+    --barra: rgb(28 28 30 / 0.78);
+    --barra-solida: #1C1C1E;
+    --separador: #3A3A3C;
+    --borda-controle: #8E8E93;          /* 5,22:1 sobre a superfície */
+
+    --texto: #F5F5F7;                   /* 15,63:1 sobre a superfície */
+    --texto-2: #A1A1AA;                 /* 6,64:1 sobre a superfície */
+
+    --destaque: #F29BB5;                /* 8,21:1 sobre a superfície */
+    --destaque-forte: #F7B9CB;
+    --destaque-preenchido: #A8325A;     /* texto branco a 6,42:1 */
+    --destaque-suave: #3A1622;          /* destaque sobre ele: 7,69:1 */
+    --sobre-destaque: #FFFFFF;
+
+    --nota-0-fundo: #12351F; --nota-0-texto: #9BE0B0;   /* 8,80:1 */
+    --nota-1-fundo: #3D3000; --nota-1-texto: #FFD970;   /* 9,51:1 */
+    --nota-2-fundo: #4A2A00; --nota-2-texto: #FFB866;   /* 7,58:1 */
+    --nota-3-fundo: #FFD6DF; --nota-3-texto: #3B0A16;   /* 12,84:1 */
+
+    --aviso-fundo: #332800; --aviso-texto: #FFE08A; --aviso-borda: #5C4A00;   /* 11,27:1 */
+    --erro: #FF8A80;                    /* 7,45:1 */
+    --erro-fundo: #3A1512;
+    --sucesso: #7BD99A;                 /* 9,91:1 */
+
+    --sombra: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.5);
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --separador: var(--borda-controle);
+    --texto-2: var(--texto);
+    --barra: var(--barra-solida);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root { --barra: var(--barra-solida); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --duracao: 0ms; }
+}

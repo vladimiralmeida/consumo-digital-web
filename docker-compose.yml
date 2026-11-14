@@ -1,0 +1,15 @@
+# Uso local: copie .env.example para .env, preencha e rode `docker compose up --build`.
+services:
+  consumo-digital:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_PATH: /data/consumo.db
+    ports:
+      - "3000:3000"
+    volumes:
+      - consumo-digital-dados:/data
+
+volumes:
+  consumo-digital-dados:

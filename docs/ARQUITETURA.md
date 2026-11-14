@@ -1,19 +1,23 @@
-# Arquitetura e proposta de back-end
+# Arquitetura
 
-Documento para quem vai evoluir o protótipo. Estado atual (v0.2): front-end estático, sem back-end, sem persistência. Tudo o que está em `assets/data.js` é conteúdo de exemplo (fictício).
+Estado atual (v0.3): front-end sem etapa de build, servidor Node.js (Express) e banco SQLite. O conteúdo jurídico e os exemplos fictícios continuam em `assets/data.js`. As escolhas e seus custos estão em `DECISOES.md`.
 
 ## 1. Estado atual
 
-| Arquivo | Papel |
+| Parte | Papel |
 |---|---|
-| `index.html` | Esqueleto: cabeçalho, `<main id="app">`, rodapé, carrega `data.js` e `app.js`. |
-| `assets/data.js` | Objeto global `window.DATA` com todo o conteúdo: tipos de problema, 14 dimensões do diagnóstico, provedores de exemplo, atores, checklists, minutas, entregas. |
-| `assets/app.js` | Estado em memória (`S`), uma função de tela por rota (`V.triagem`, `V.diagnostico`, ...), roteador por hash (`#/rota`), delegação de eventos (`data-a`, `data-i`, `data-f`) e funções de exportação (`EXP`). |
-| `assets/styles.css` | Visual (variáveis CSS no topo). |
+| `index.html` | Esqueleto: carrega os estilos, `data.js`, `dominio.js` e o módulo `assets/js/main.js`. |
+| `assets/data.js` | Objeto `DATA` com o conteúdo: tipos de problema, 14 dimensões, provedores de exemplo, atores, checklists, entregas. Usado pelo navegador e pelo servidor. |
+| `assets/dominio.js` | Regras puras: índice, média ponderada, conferência de trecho, detecção de segredo de carteira. Usado pelos dois lados e coberto por testes. |
+| `assets/js/main.js` | Barra, menu lateral, roteador por hash (`#/rota`) e delegação de eventos. |
+| `assets/js/telas/*.js` | Um módulo por tela: `render()`, `acoes` (cliques, `data-a`), `mudancas` (caixas e seletores, `data-m`), `campos` (digitação, `data-c`), `formularios` (`data-f`) e `regioes` (áreas calculadas, `data-regiao`). |
+| `assets/js/html.js` | Modelo etiquetado `html` que escapa toda interpolação. Texto de usuário nunca vira marcação. |
+| `assets/js/salvar.js`, `gravar.js` | Salvamento automático: digitação é gravada após uma pausa; cliques, na hora. A situação aparece na barra. |
+| `server/` | API REST em JSON, sessão por cookie, validação com zod, SQLite (`node:sqlite`). |
 
-Fluxo: `hashchange` → `render()` → `V[rota]()` devolve HTML → `app.innerHTML`. Cliques chamam `ACT[acao](indice)`, que altera `S` e re-renderiza. Campos de texto gravam em `S` no evento `input`, sem re-render.
+Fluxo de tela: clique → `acoes[nome]` altera o estado e grava → redesenho completo com o foco restaurado. Digitação → `campos[nome]` altera o estado e agenda a gravação → só as regiões calculadas são redesenhadas, para o cursor não sair do campo.
 
-Rotas: `triagem`, `diagnostico`, `comparacao`, `parecer`, `agente`, `publicidade`, `dados`, `ativos`, `skill`.
+Rotas de tela: `triagem`, `diagnostico`, `comparacao`, `parecer`, `agente`, `publicidade`, `dados`, `ativos`, `skill`, `contas` (professor e administrador), `conta`.
 
 ## 2. Regras de domínio que o código já embute
 
@@ -24,40 +28,51 @@ Rotas: `triagem`, `diagnostico`, `comparacao`, `parecer`, `agente`, `publicidade
 - **Segurança:** o sistema nunca pede, recebe ou grava frase de recuperação ou chave privada de carteira, nem dados pessoais do usuário.
 - **Média ponderada da rubrica:** pesos 2,5 / 3,0 / 2,0 / 1,5 / 1,0 (soma 10).
 
-## 3. Modelo de dados proposto
+## 3. Modelo de dados (implementado em `server/db.js`)
 
 ```
-Grupo(id, nome, turma, criado_em)
-Usuario(id, nome, email, grupo_id, papel[aluno|professor|admin])
-Caso(id, grupo_id, tipo, descricao_curta, criado_em)
-Prova(id, caso_id, descricao, link_original, link_arquivado, data_acesso, entregue)
-Diagnostico(id, caso_id, plataforma, documento_url, link_arquivado, data_acesso,
-            ferramenta_ia, versao_modelo, data_criacao, prompt_usado)
-Resposta(id, diagnostico_id, pergunta_id[P1.1..P5.4], dimensao, nota[0..3],
-         trecho_literal, conferido[true|false|null], por_que, parametro_legal)
-Comparacao(id, grupo_id, provedor_nome, dimensao, nota, texto, divergencia_destacada)
-Parecer(id, diagnostico_id, formato[senacon|plataforma], texto, validado_humano, declaracao_ia)
-RegistroTransacao(id, grupo_id, rede, endereco_origem, endereco_destino, hash, data_hora, link_explorador, obs)
-Autoavaliacao(id, parecer_id, criterio, nota)
+grupos(id, nome, turma, divergencia_destacada, higiene, passos_ativos, criado_em)
+usuarios(id, nome, email, senha_hash, papel[aluno|professor|admin], grupo_id, deve_trocar_senha, ativo, criado_em)
+sessoes(token_hash, usuario_id, csrf, expira_em)
+casos(id, grupo_id, titulo, tipo, descricao_curta, provas, checklist_publicidade, criado_em, atualizado_em)
+diagnosticos(caso_id, plataforma, documento_url, link_arquivado, data_acesso, texto_fonte,
+             ferramenta_ia, versao_modelo, data_criacao, prompt_usado, atualizado_em)
+respostas(caso_id, dimensao[1..14], pergunta_id, nota[0..3], trecho_literal,
+          conferido[1|0|NULL], resumo, por_que, origem[grupo|ia], atualizado_em)
+consultas_ia(id, caso_id, dimensao, pergunta_id, usuario_id, ferramenta, modelo, prompt, resposta, criado_em)
+pareceres(caso_id, formato, texto, validado_humano, validado_por, validado_em,
+          declaracao_ia, declarado_por, declarado_em, notas, atualizado_em)
+comparacoes(id, grupo_id, provedor_ordem, provedor_nome, dimensao, nota, texto)
+transacoes(id, grupo_id, integrante, rede, endereco_origem, endereco_destino, hash, data_hora, link_explorador, obs, criado_em)
 ```
 
 Observações:
-- `RegistroTransacao` guarda **apenas endereços públicos e hash**. Validar no servidor que os campos não parecem frase de recuperação (12 ou 24 palavras) nem chave privada (64 caracteres hexadecimais), e rejeitar.
-- Para dados sensíveis, aplicar minimização e prazo de retenção (LGPD, arts. 6º e 16).
+- Um caso tem um diagnóstico e um parecer. Apagar o caso apaga os dois, as respostas e as consultas.
+- `transacoes` guarda **apenas endereços públicos e hash**. O servidor rejeita valor com formato de frase de recuperação (12 ou mais palavras em sequência) ou de chave privada (64 hexadecimais ou WIF). No campo `hash` o formato de 64 hexadecimais é aceito, porque é o do próprio código da transação.
+- Listas de itens marcados (provas, checklists) são vetores de índices em JSON, validados na entrada.
+- Mudanças de esquema entram como nova posição em `MIGRACOES`; a versão fica em `PRAGMA user_version`.
+- Para dados pessoais (nome e e-mail das contas), aplicar minimização e prazo de retenção (LGPD, arts. 6º e 16).
 
-## 4. API proposta (REST, JSON)
+## 4. API (REST, JSON)
+
+Toda rota fora de `/api/auth` exige sessão. Toda alteração exige `Content-Type: application/json` e o cabeçalho `X-CSRF-Token`.
 
 | Método e rota | Função |
 |---|---|
-| `POST /api/grupos` · `GET /api/grupos/:id` | Criar e consultar grupo |
-| `POST /api/casos` · `GET /api/casos/:id` | Triagem: cria caso e devolve regime provável e provas sugeridas |
-| `POST /api/diagnosticos` | Cria diagnóstico (plataforma, link, ferramenta de IA) |
-| `PUT /api/diagnosticos/:id/respostas/:pergunta` | Grava resposta de uma dimensão |
-| `POST /api/diagnosticos/:id/conferir` | Confere cada trecho literal contra o texto-fonte do documento arquivado |
-| `GET /api/diagnosticos/:id/indice` | Calcula índice base e subíndice |
-| `GET /api/comparacoes/:grupoId/export.csv` | Anexo I |
-| `POST /api/pareceres` · `GET /api/pareceres/:id/export.docx` | Gera e exporta parecer e apêndice |
-| `POST /api/transacoes` · `GET /api/grupos/:id/transacoes/export.csv` | Anexo II |
+| `POST /api/auth/login` · `POST /api/auth/logout` · `GET /api/auth/me` · `POST /api/auth/senha` | Sessão e troca de senha |
+| `GET /api/grupos` · `POST /api/grupos` · `PUT /api/grupos/:id` | Grupos (criar e editar: professor e administrador) |
+| `GET /api/usuarios` · `POST /api/usuarios` · `PATCH /api/usuarios/:id` | Contas (professor e administrador); devolve a senha inicial uma única vez |
+| `GET /api/casos?grupo_id=` · `POST /api/casos` · `GET`, `PATCH`, `DELETE /api/casos/:id` | Casos e triagem; `GET` devolve diagnóstico, respostas, índice, parecer e consultas |
+| `PUT /api/casos/:id/diagnostico` | Dados do documento e texto-fonte; refaz a conferência de todos os trechos |
+| `PUT /api/casos/:id/respostas/:dimensao` | Grava a resposta de uma dimensão e devolve conferência e índice |
+| `POST /api/casos/:id/ia/:dimensao` | Consulta a IA para uma dimensão, grava a sugestão e registra a consulta |
+| `PUT /api/casos/:id/parecer` | Formato, texto, autoavaliação, validação humana e declaração de uso de IA |
+| `GET /api/grupos/:id/dados` | Comparação, transações e anotações do grupo |
+| `PUT /api/grupos/:id/comparacao` · `PUT /api/grupos/:id/anotacoes` | Anexo I e checklists do grupo |
+| `POST /api/grupos/:id/transacoes` · `PUT`, `DELETE /api/transacoes/:id` | Anexo II |
+| `GET /saude` | Verificação de funcionamento |
+
+As exportações em CSV e TXT continuam sendo geradas no navegador, a partir dos dados salvos. Exportação do parecer em Word e PDF: pendente.
 
 ## 5. Integração com IA
 
@@ -69,16 +84,16 @@ Observações:
 
 ## 6. Autenticação e privacidade
 
-- Login institucional ou por convite do professor. Sem cadastro aberto.
+- Sem cadastro aberto: administrador e professor criam as contas; a senha inicial é trocada no primeiro acesso.
 - Cada grupo só enxerga seus dados; professor enxerga os da turma.
 - Política de privacidade e base legal definidas antes de guardar qualquer dado (LGPD).
 - Backups e descarte ao fim da disciplina.
 
 ## 7. Hospedagem
 
-- Front-end estático: GitHub Pages (atual) ou o mesmo servidor do back-end.
+- Front-end e API são servidos pelo mesmo servidor Node.js (uma origem só, sem CORS).
 - Back-end: servidor próprio, plataforma em nuvem ou serviço gerenciado, a critério de quem implementar. O GitHub Pages **não executa código de servidor**.
-- Se front e API ficarem em domínios diferentes, configurar CORS e cookies de sessão com `SameSite` adequado.
+- A imagem do `Dockerfile` precisa de um volume em `/data` (banco) e de HTTPS à frente.
 
 ## 8. Referências normativas usadas nas telas (conferir na fonte antes de qualquer uso)
 
