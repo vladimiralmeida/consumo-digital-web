@@ -1,38 +1,92 @@
-# Consumo Digital · protótipo web v0.2
+# Consumo Digital · v0.3
 
-Protótipo de interface para a skill **Consumo Digital Diagnóstico** (disciplina Relações de Consumo e Novas Tecnologias, PPGDI-UNICAP). Site estático: HTML, CSS e JavaScript puros, sem build e sem dependências.
+Interface para a skill **Consumo Digital Diagnóstico** (disciplina Relações de Consumo e Novas Tecnologias, PPGDI-UNICAP): triagem do caso, diagnóstico da opacidade de termos de uso, comparação de provedores de IA generativa, parecer e apêndice técnico.
 
-**Todos os exemplos são fictícios.** Nada é enviado nem guardado: o navegador só gera arquivo quando você clica em *Exportar* (CSV ou TXT). Não digite dados pessoais, frase de recuperação nem chave privada.
+A partir da v0.3 a aplicação tem **servidor e banco de dados**: o que cada grupo preenche fica salvo, o acesso é por conta e senha, e o diagnóstico pode receber sugestões de IA. A v0.2 era um site estático que perdia tudo ao recarregar.
+
+Os exemplos que acompanham o sistema são fictícios e identificados como tais. Não registre dados pessoais de terceiros, frase de recuperação nem chave privada.
 
 ## Telas
-Triagem do caso · Diagnóstico da Opacidade (com módulo de IA generativa) · Comparação de provedores (Anexo I) · Parecer e apêndice · Agente de IA · Publicidade · Dados · Ativos digitais (Anexo II) · Skill v0.2 e entregas.
+
+Triagem do caso · Diagnóstico da Opacidade (com módulo de IA generativa) · Comparação de provedores (Anexo I) · Parecer e apêndice · Agente de IA · Publicidade · Dados · Ativos digitais (Anexo II) · Skill v0.2 e entregas · Contas e grupos (professor e administrador).
 
 ## Rodar localmente
-Abra `index.html` no navegador. Ou, na pasta: `python3 -m http.server 8000` e acesse http://localhost:8000.
 
-## Publicar no GitHub Pages
-1. Crie um repositório **público** (ex.: `consumo-digital-web`) em github.com.
-2. Envie o conteúdo desta pasta para a raiz do repositório (inclua o arquivo `.nojekyll`).
-3. Em *Settings > Pages*, escolha *Deploy from a branch*, branch `main`, pasta `/ (root)`.
-4. O site ficará em `https://SEU-USUARIO.github.io/consumo-digital-web/`.
+Requer Node.js 22.13 ou mais novo (testado no 24).
 
-## Antes de publicar
-- Confira as referências normativas e as datas (Tema 987 na redação dos embargos de 17/06/2026, Res. BCB 519 a 521/2025, Lei 15.211/2025, orientação do CONAR) na fonte oficial.
-- Confirme as datas das entregas na tela *Skill v0.2 e entregas*.
-- Revise o aviso de conteúdo fictício e inclua licença e forma de citar (ex.: CC BY 4.0, a decidir com o grupo).
+```bash
+npm install
+cp .env.example .env      # preencha ADMIN_EMAIL e ADMIN_SENHA; para http://localhost use COOKIE_SECURE=false
+npm start                 # http://localhost:3000
+```
 
-## Ajustes de design
-As cores ficam nas variáveis de `assets/styles.css` (`--primary` etc.). O bordô é uma aproximação; troque pelo tom oficial da UNICAP, se houver manual de identidade. Os textos e dados ficam em `assets/data.js`.
+Na primeira partida o servidor cria o administrador com `ADMIN_EMAIL` e `ADMIN_SENHA`. No primeiro acesso ele é obrigado a trocar a senha. Depois: **Contas e grupos** → criar os grupos → criar as contas. Cada conta nasce com uma senha inicial, mostrada uma única vez.
 
-## Para quem vai evoluir o projeto
-Veja `docs/ARQUITETURA.md` (arquitetura e proposta de back-end), `docs/TAREFAS.md` (lista de tarefas) e `CONTRIBUTING.md`.
+Com Docker: `docker compose up --build` (o banco fica no volume `consumo-digital-dados`).
+
+## Variáveis de ambiente
+
+| Variável | Para que serve |
+|---|---|
+| `PORT` | Porta HTTP (padrão 3000). |
+| `DATABASE_PATH` | Arquivo do SQLite. Em contêiner, aponte para um volume. |
+| `ADMIN_EMAIL`, `ADMIN_SENHA`, `ADMIN_NOME` | Administrador inicial. Só são usadas quando o banco não tem administrador. |
+| `COOKIE_SECURE` | `true` em produção (HTTPS). `false` só para testar em `http://localhost`. |
+| `TRUST_PROXY` | Número de proxies à frente do servidor (1 atrás do Traefik do Dokploy). |
+| `DEEPSEEK_API_KEY`, `DEEPSEEK_MODEL`, `DEEPSEEK_BASE_URL` | Diagnóstico com IA. Sem a chave, a IA fica desativada e o restante funciona. |
+
+Nenhum segredo vai para o repositório: `.env` está no `.gitignore`.
+
+## Perfis
+
+- **Aluno**: vê e edita só os dados do próprio grupo. Só integrante do grupo marca a validação humana e a declaração de uso de IA.
+- **Professor**: vê todos os grupos, cria grupos e contas de aluno.
+- **Administrador**: tudo o que o professor faz, mais contas de professor e de administrador.
+
+## Verificar
+
+```bash
+npm run lint       # ESLint
+npm test           # 77 testes com cobertura (node:test)
+npm run verificar  # os dois
+```
+
+## Publicar
+
+A aplicação precisa de um servidor; o **GitHub Pages não a executa** (ali aparece um aviso explicando). O `Dockerfile` gera uma imagem pronta para qualquer hospedagem de contêiner. Monte um volume em `/data`, defina as variáveis acima e coloque HTTPS na frente.
+
+Antes de publicar para uso real:
+- Confira as referências normativas e as datas nas fontes oficiais (lista em `docs/ARQUITETURA.md`, seção 8).
+- Defina com o professor a política de privacidade, a base legal e o prazo de descarte dos dados (LGPD).
+- Avise os grupos de que o texto colado para o diagnóstico com IA é enviado ao serviço de IA.
+- Defina a licença e a forma de citar.
 
 ## Estrutura
+
 ```
 index.html
-assets/styles.css
-assets/data.js    (conteúdo)
-assets/app.js     (telas e interações)
-.nojekyll
-docs/ (arquitetura e tarefas)
+assets/
+  data.js            conteúdo jurídico e exemplos (usado no navegador e no servidor)
+  dominio.js         regras de cálculo: índice, média, conferência de trecho, segredos de carteira
+  css/               tokens.css (cores, tipos, medidas), base.css, componentes.css
+  js/                main.js, estado, salvamento automático, API
+  js/telas/          um módulo por tela
+server/
+  index.js, app.js   partida e montagem da aplicação
+  db.js              SQLite e migrações
+  auth.js            senha, sessão, perfis, CSRF
+  seguranca.js       cabeçalhos e limite de requisições
+  validacao.js       esquemas de entrada (zod)
+  rotas/             autenticação, administração, casos, dados do grupo, IA
+  ia/deepseek.js     chamada ao modelo
+test/                testes de domínio e da API
+docs/                arquitetura, decisões, auditoria e tarefas
 ```
+
+## Documentação
+
+- `docs/AUDITORIA.md`: verificação da v0.2 (boas práticas do ECC e revisão de interface) e o que mudou.
+- `docs/DECISOES.md`: escolhas de implementação e seus custos.
+- `docs/ARQUITETURA.md`: modelo de dados, API e regras de domínio.
+- `docs/TAREFAS.md`: o que foi feito e o que falta.
+- `CONTRIBUTING.md`: como contribuir.
