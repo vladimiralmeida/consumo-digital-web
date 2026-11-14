@@ -6,7 +6,8 @@ const DATA = window.DATA;
 
 function visaoInicial() {
   return {
-    diag: { aberta: null, eixo: 'all', consultando: {}, lote: null },
+    diag: { aberta: null, eixo: 'all' },
+    analise: { consultando: {}, lote: null, falha: '', buscando: false, falhaDoArquivo: '', avisoDoArquivo: '' },
     comp: { soDivergentes: false },
     agente: { ator: 'agente', cenario: 'fora' },
     pub: { ator: 'plataforma' },

@@ -91,6 +91,7 @@ const esquemas = {
     por_que: texto(LIMITES.textoMedio)
   }),
   consultaIa: z.strictObject({ substituir: z.boolean().default(false) }),
+  copiaArquivada: z.strictObject({ url: urlOpcional.refine((valor) => valor.length > 0, 'Informe o link original dos termos.') }),
 
   parecer: z.strictObject({
     formato: z.enum(FORMATOS_DE_PARECER),

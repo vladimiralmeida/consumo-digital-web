@@ -66,6 +66,7 @@ Toda rota fora de `/api/auth` exige sessão. Toda alteração exige `Content-Typ
 | `PUT /api/casos/:id/diagnostico` | Dados do documento e texto-fonte; refaz a conferência de todos os trechos |
 | `PUT /api/casos/:id/respostas/:dimensao` | Grava a resposta de uma dimensão e devolve conferência e índice |
 | `POST /api/casos/:id/ia/:dimensao` | Consulta a IA para uma dimensão, grava a sugestão e registra a consulta |
+| `POST /api/casos/:id/arquivo` | Busca a cópia arquivada do link original na Wayback Machine e preenche link arquivado, data de acesso e texto-fonte |
 | `PUT /api/casos/:id/parecer` | Formato, texto, autoavaliação, validação humana e declaração de uso de IA |
 | `GET /api/grupos/:id/dados` | Comparação, transações e anotações do grupo |
 | `PUT /api/grupos/:id/comparacao` · `PUT /api/grupos/:id/anotacoes` | Anexo I e checklists do grupo |

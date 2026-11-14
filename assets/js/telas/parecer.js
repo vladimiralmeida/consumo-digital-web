@@ -1,6 +1,7 @@
 /* Parecer: formato, texto do grupo, apêndice técnico e autoavaliação pela rubrica. */
 import { estado, alterarPacote, ehIntegrante, indiceEmTela } from '../estado.js';
 import { baixarTexto, dataDeHoje } from '../exportar.js';
+import { proximoPasso, trilha } from '../fluxo.js';
 import { gravarParecer } from '../gravar.js';
 import { html, atributo } from '../html.js';
 import { agendarSalvamento, salvarAgora } from '../salvar.js';
@@ -67,6 +68,7 @@ function render() {
   const prontos = situacao.filter(Boolean).length;
   return html`
     ${cabecalho('Do diagnóstico ao parecer', 'Escolha o formato, redija o texto de 3 a 5 páginas e complete o apêndice técnico. A ferramenta organiza; a conferência e a declaração de validação humana são do grupo.')}
+    ${trilha()}
     <div class="colunas">
       <div class="coluna">
         <section class="cartao">
@@ -92,6 +94,7 @@ function render() {
             ${DATA.estrutura.map((parte, i) => html`<li>${parte[0]}${i === DATA.estrutura.length - 1 ? ` (${formato.tom})` : ''} ${parte[1] ? html`<span class="apoio">${parte[1]}</span>` : ''}</li>`)}
           </ol>
         </section>
+        ${proximoPasso('parecer')}
       </div>
       <aside class="coluna">
         <section class="cartao realce">

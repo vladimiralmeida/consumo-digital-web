@@ -29,8 +29,12 @@ const raiz = document.getElementById('raiz');
 
 const ICONE = html`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>`;
 
+/* O endereço tem a forma #/rota ou #/rota?ir=ancora (para levar a uma parte da tela). */
+const partesDoEndereco = () => (location.hash || '').replace(/^#\//, '').split('?');
+const ancoraPedida = () => new URLSearchParams(partesDoEndereco()[1] || '').get('ir');
+
 function rotaAtual() {
-  const nome = (location.hash || '').replace(/^#\//, '');
+  const nome = partesDoEndereco()[0];
   const tela = TELAS[nome];
   if (!tela || (tela.restrita && !ehGestor())) { return ROTA_INICIAL; }
   return nome;
@@ -145,10 +149,24 @@ async function abrirRota() {
   if (estado.fase === 'app' && tela.carregar) {
     try { await tela.carregar(); } catch (erro) { estado.visao.contas.falha = erro.message; }
   }
-  redesenhar();
-  window.scrollTo(0, 0);
-  const principal = document.getElementById('app');
-  if (principal) { principal.focus({ preventScroll: true }); }
+  trocarDeTela(() => {
+    redesenhar();
+    const alvo = ancoraPedida() && document.getElementById(ancoraPedida());
+    if (alvo) {
+      alvo.scrollIntoView({ block: 'start' });
+      alvo.focus({ preventScroll: true });
+      return;
+    }
+    window.scrollTo(0, 0);
+    const principal = document.getElementById('app');
+    if (principal) { principal.focus({ preventScroll: true }); }
+  });
+}
+
+/** Usa a transição nativa do navegador entre telas, quando existe e a pessoa não pediu menos movimento. */
+function trocarDeTela(desenhar) {
+  const semMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (document.startViewTransition && !semMovimento) { document.startViewTransition(desenhar); } else { desenhar(); }
 }
 
 /* ---------- eventos ---------- */
@@ -212,6 +230,11 @@ document.addEventListener('click', (evento) => {
 });
 
 window.addEventListener('hashchange', abrirRota);
+/* Link para o endereço em que a pessoa já está não dispara hashchange: reabre a tela (e a âncora) à mão. */
+document.addEventListener('click', (evento) => {
+  const link = evento.target.closest('a[href^="#/"]');
+  if (link && link.getAttribute('href') === location.hash) { abrirRota(); }
+});
 window.addEventListener('sessao-encerrada', () => {
   reiniciarEstado();
   estado.fase = 'entrada';

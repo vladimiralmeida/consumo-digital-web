@@ -7,6 +7,7 @@ const { ErroHttp } = require('./erros');
 const { cabecalhosDeSeguranca, limitarRequisicoes } = require('./seguranca');
 const { rotasDeAutenticacao } = require('./rotas/autenticacao');
 const { rotasDeAdministracao } = require('./rotas/administracao');
+const { rotasDeArquivo } = require('./rotas/arquivo');
 const { rotasDeCasos } = require('./rotas/casos');
 const { rotasDeDadosDoGrupo } = require('./rotas/grupo-dados');
 const { rotasDeIa } = require('./rotas/ia');
@@ -55,6 +56,7 @@ function criarApp({ db, config, fetchImpl = globalThis.fetch }) {
   api.use(rotasDeCasos(contexto));
   api.use(rotasDeDadosDoGrupo(contexto));
   api.use(rotasDeIa(contexto));
+  api.use(rotasDeArquivo(contexto));
   api.use(() => { throw new ErroHttp(404, 'Recurso não encontrado.'); });
 
   app.use('/api', api);

@@ -250,3 +250,53 @@ dialog::backdrop { background: rgb(0 0 0 / 0.4); }
 /* ---------- ajustes finos ---------- */
 .item > strong { flex: none; white-space: nowrap; }
 .rolagem table { min-width: 560px; }
+
+/* ---------- trilha do caso (etapas ligadas) ---------- */
+.trilha { margin-bottom: var(--espaco-5); }
+.trilha ol { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--espaco-1); overflow-x: auto; scrollbar-width: thin; }
+.trilha li { flex: 1 1 0; min-width: 132px; position: relative; }
+/* O fio entre as etapas mostra a ordem; fica cheio até a etapa concluída. */
+.trilha li + li::before { content: ""; position: absolute; top: 21px; left: calc(-50% + 22px); right: calc(50% + 22px); height: 2px; background: var(--separador); }
+.trilha li.feita + li::before { background: var(--sucesso); }
+.trilha a {
+  display: flex; flex-direction: column; align-items: center; gap: var(--espaco-2); text-align: center;
+  padding: var(--espaco-1) var(--espaco-2) var(--espaco-2); border-radius: var(--raio); text-decoration: none; color: var(--texto-2);
+  transition: background-color var(--duracao) var(--curva);
+}
+.trilha a:hover { background: var(--superficie); color: var(--texto); }
+.trilha-marca {
+  width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; position: relative; z-index: 1;
+  background: var(--superficie); box-shadow: inset 0 0 0 2px var(--separador);
+  font-weight: 700; font-size: var(--texto-apoio); font-variant-numeric: tabular-nums;
+}
+.trilha-texto { display: flex; flex-direction: column; }
+.trilha-nome { font-size: var(--texto-apoio); font-weight: 600; }
+.trilha-detalhe { font-size: var(--texto-legenda); }
+.trilha li.feita .trilha-marca { background: var(--sucesso); color: var(--superficie); box-shadow: none; }
+.trilha li.feita a { color: var(--texto); }
+.trilha li.atual .trilha-marca { background: var(--destaque-preenchido); color: var(--sobre-destaque); box-shadow: 0 0 0 4px var(--destaque-suave); }
+.trilha li.atual a { color: var(--destaque); }
+
+/* ---------- cartão do próximo passo ---------- */
+.cartao.proximo { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; box-shadow: inset 0 0 0 1px var(--separador); }
+.cartao.proximo > .pilha { flex: 1 1 260px; }
+
+/* ---------- resultado da análise por pergunta ---------- */
+.resultados { list-style: none; margin: 0; padding: 0; border-radius: var(--raio); background: var(--superficie-2); overflow: hidden; }
+.resultados li + li { border-top: 1px solid var(--separador); }
+.resultado {
+  display: flex; align-items: center; gap: var(--espaco-3); width: 100%; min-height: 52px;
+  padding: var(--espaco-2) var(--espaco-4); border: 0; background: transparent; cursor: pointer; text-align: left; font-size: var(--texto-apoio);
+}
+.resultado:hover { background: color-mix(in srgb, var(--separador) 45%, transparent); }
+.resultado-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.resultado .sinal { color: var(--texto-2); font-size: 1.25rem; }
+.resultado.ativo .nota { animation: pulsar 1s var(--curva) infinite alternate; }
+@keyframes pulsar { from { opacity: 1; } to { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .resultado.ativo .nota { animation: none; } }
+
+#termos:focus, #termos:focus-visible { outline: none; }
+#termos { scroll-margin-top: 80px; }
+
+/* Transição entre telas (View Transitions API): curta, e desligada com movimento reduzido. */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 180ms; }

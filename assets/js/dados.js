@@ -68,6 +68,8 @@ export async function selecionarGrupo(grupoId) {
 export async function selecionarCaso(casoId) {
   await descarregarAgendados();
   estado.pacote = casoId ? await api('GET', `/casos/${casoId}`) : null;
+  /* Andamento e avisos da análise pertencem ao caso anterior. */
+  estado.visao.analise = { consultando: {}, lote: null, falha: '', buscando: false, falhaDoArquivo: '', avisoDoArquivo: '' };
   if (casoId) { lembrar(`caso:${estado.grupoId}`, casoId); }
 }
 

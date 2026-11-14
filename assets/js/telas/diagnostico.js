@@ -1,18 +1,17 @@
 /* Diagnóstico da Opacidade: documento analisado, régua de 14 dimensões, conferência e IA. */
-import { api } from '../api.js';
+import { analise, analisarPendentes, consultarIa, dimensao, pararAnalise } from '../analise.js';
 import { estado, alterarPacote, alterarResposta, indiceEmTela, respostaDa, temResposta } from '../estado.js';
 import { baixarCsv, dataDeHoje } from '../exportar.js';
+import { proximoPasso, trilha } from '../fluxo.js';
 import { gravarDiagnostico, gravarResposta } from '../gravar.js';
 import { html, atributo } from '../html.js';
-import { pedirRedesenho } from '../painel.js';
-import { agendarSalvamento, descarregarAgendados, salvarAgora } from '../salvar.js';
-import { avisoLegal, cabecalho, campo, confirmar, emblema, formatarData, nota, segmento, semCaso } from '../ui.js';
+import { agendarSalvamento, salvarAgora } from '../salvar.js';
+import { avisoLegal, cabecalho, campo, emblema, formatarData, nota, segmento, semCaso } from '../ui.js';
 
 const DATA = window.DATA;
 const SIGNIFICADO_DAS_NOTAS = ['claro e favorável', 'pequenas lacunas', 'vago ou desfavorável', 'omisso ou fortemente desfavorável'];
 const MAIS_GRAVES = 3;
 const visao = () => estado.visao.diag;
-const dimensao = (numero) => DATA.dims.find((item) => item.n === Number(numero));
 const ehLink = (valor) => /^https?:\/\//i.test(valor);
 
 function emblemaDeConferencia(resposta, descritiva) {
@@ -40,7 +39,7 @@ function fonteDoDocumento() {
 
 function editorDaDimensao(item) {
   const resposta = respostaDa(item.n);
-  const consultando = Boolean(visao().consultando[item.n]);
+  const consultando = Boolean(analise().consultando[item.n]);
   return html`
     <div class="abre-corpo">
       <div class="pilha junta"><span class="rotulo">Pergunta ${item.pid}</span><p>${item.prompt}</p></div>
@@ -62,7 +61,7 @@ function editorDaDimensao(item) {
       ${campo(`porque-${item.n}`, 'Por que esta nota', resposta.por_que, 'dg-porque', { indice: item.n, linhas: 2, maximo: 2000 })}
       ${estado.ia.disponivel ? html`
         <div class="linha-acoes">
-          <button type="button" class="botao" data-a="dg-ia" data-i="${item.n}"${atributo(consultando || Boolean(visao().lote), 'disabled')}>${consultando ? 'Consultando a IA…' : 'Sugerir com IA'}</button>
+          <button type="button" class="botao" data-a="dg-ia" data-i="${item.n}"${atributo(consultando || Boolean(analise().lote), 'disabled')}>${consultando ? 'Consultando a IA…' : 'Sugerir com IA'}</button>
           ${resposta.origem === 'ia' ? html`<span class="legenda">Sugestão da IA (${estado.ia.ferramenta}). A nota e a conclusão são do grupo: revise e ajuste.</span>` : ''}
         </div>` : ''}
     </div>`;
@@ -123,7 +122,7 @@ function regiaoDaConferencia() {
 }
 
 function cartaoDaIa() {
-  const { lote, falhaIa } = visao();
+  const { lote, falha: falhaIa } = analise();
   const semResposta = DATA.dims.filter((item) => !temResposta(item.n)).length;
   if (!estado.ia.disponivel) {
     return html`<p class="aviso neutro" role="note"><strong>IA desativada neste servidor.</strong> O grupo preenche as respostas à mão; a conferência dos trechos funciona normalmente.</p>`;
@@ -149,6 +148,7 @@ function render() {
   const visiveis = DATA.dims.filter((item) => visao().eixo === 'all' || item.axis === visao().eixo);
   return html`
     ${cabecalho('Diagnóstico da Opacidade', 'O grupo interroga os termos com as mesmas 12 perguntas, em quatro rodadas, mais quatro do módulo de IA generativa, e confere cada transcrição com o texto-fonte.')}
+    ${trilha()}
     <div class="colunas">
       <div class="coluna">
         <section class="cartao">
@@ -181,6 +181,7 @@ function render() {
           <div class="campos-2">${campo('dg-criacao', 'Data da criação', diagnostico.data_criacao, 'dg-doc', { indice: 'data_criacao', tipo: 'date' })}</div>
           ${campo('dg-prompt', 'Prompt utilizado', diagnostico.prompt_usado, 'dg-doc', { indice: 'prompt_usado', linhas: 2, maximo: 5000, dica: 'Exatamente como enviado.' })}
         </section>
+        ${proximoPasso('diagnostico')}
       </div>
       <aside class="coluna">
         <section class="cartao realce compacto" data-regiao="indice">${regiaoDoIndice()}</section>
@@ -193,48 +194,6 @@ function render() {
         ${avisoLegal()}
       </aside>
     </div>`;
-}
-
-function aplicarRespostaDaIa(resultado) {
-  estado.pacote = { ...estado.pacote, respostas: resultado.respostas, indice: resultado.indice, consultas: resultado.consultas };
-  if (resultado.documento_truncado) {
-    visao().falhaIa = 'O documento é longo demais para a IA ler inteiro: só a parte inicial foi analisada. Confira as cláusulas do final à mão.';
-  }
-}
-
-/** Consulta a IA para uma dimensão. Devolve false se a consulta falhar ou for cancelada. */
-async function consultarIa(numero, substituir = false) {
-  const casoId = estado.pacote.caso.id;
-  visao().consultando = { ...visao().consultando, [numero]: true };
-  pedirRedesenho();
-  try {
-    await descarregarAgendados();
-    aplicarRespostaDaIa(await api('POST', `/casos/${casoId}/ia/${numero}`, { substituir }));
-    return true;
-  } catch (erro) {
-    if (erro.dados && erro.dados.codigo === 'resposta_do_grupo') {
-      const confirmado = await confirmar({
-        titulo: 'Substituir a resposta do grupo?',
-        texto: `A dimensão “${dimensao(numero).name}” já tem uma resposta escrita pelo grupo. A sugestão da IA vai tomar o lugar dela.`,
-        rotuloConfirmar: 'Substituir pela sugestão'
-      });
-      return confirmado ? consultarIa(numero, true) : false;
-    }
-    visao().falhaIa = erro.message;
-    return false;
-  } finally {
-    visao().consultando = { ...visao().consultando, [numero]: false };
-  }
-}
-
-async function consultarTodas() {
-  const pendentes = DATA.dims.filter((item) => !temResposta(item.n)).map((item) => item.n);
-  visao().lote = { feitas: 0, total: pendentes.length, parar: false };
-  for (const numero of pendentes) {
-    if (visao().lote.parar || !(await consultarIa(numero))) { break; }
-    visao().lote = { ...visao().lote, feitas: visao().lote.feitas + 1 };
-  }
-  visao().lote = null;
 }
 
 function exportarFicha() {
@@ -276,9 +235,9 @@ export const tela = {
       alterarResposta(numero, { nota: respostaDa(numero).nota === valor ? null : valor, origem: 'grupo' });
       salvarAgora(`resposta:${numero}`, gravarResposta(numero));
     },
-    'dg-ia': async (numero) => { visao().falhaIa = ''; await consultarIa(Number(numero)); },
-    'dg-ia-todas': async () => { visao().falhaIa = ''; await consultarTodas(); },
-    'dg-ia-parar': () => { if (visao().lote) { visao().lote = { ...visao().lote, parar: true }; } },
+    'dg-ia': async (numero) => { estado.visao.analise = { ...analise(), falha: '' }; await consultarIa(Number(numero)); },
+    'dg-ia-todas': analisarPendentes,
+    'dg-ia-parar': pararAnalise,
     'dg-exportar': exportarFicha
   },
   campos: {
