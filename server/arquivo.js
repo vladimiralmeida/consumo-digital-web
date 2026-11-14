@@ -10,6 +10,8 @@ const { ErroHttp } = require('./erros');
 const API_DE_DISPONIBILIDADE = 'https://archive.org/wayback/available';
 const SERVIDOR_DO_ARQUIVO = 'web.archive.org';
 const TEMPO_LIMITE_MS = 30000;
+const TENTATIVAS_DE_CONEXAO = 3;
+const ESPERA_ENTRE_TENTATIVAS_MS = 600;
 const TAMANHO_MAXIMO_DA_PAGINA = 3 * 1024 * 1024;
 const TEXTO_MINIMO_UTIL = 500;
 const ESPACOS = new RegExp('[ \t' + String.fromCharCode(160) + ']+', 'g');
@@ -52,13 +54,20 @@ function extrairTexto(html) {
     .trim();
 }
 
+const esperar = (milissegundos) => new Promise((resolver) => { setTimeout(resolver, milissegundos); });
+
+/** Falhas de conexão com o arquivo costumam ser passageiras: tenta de novo antes de desistir. */
 async function buscar(fetchImpl, url) {
-  try {
-    return await fetchImpl(url, { redirect: 'follow', signal: AbortSignal.timeout(TEMPO_LIMITE_MS), headers: { Accept: 'application/json, text/html, text/plain' } });
-  } catch (erro) {
-    console.error('[arquivo] falha de rede ao consultar a Wayback Machine:', erro.name);
-    throw new ErroHttp(502, 'Não foi possível falar com a Wayback Machine. Tente de novo em instantes ou cole o texto dos termos.');
+  for (let tentativa = 1; tentativa <= TENTATIVAS_DE_CONEXAO; tentativa += 1) {
+    try {
+      return await fetchImpl(url, { redirect: 'follow', signal: AbortSignal.timeout(TEMPO_LIMITE_MS), headers: { Accept: 'application/json, text/html, text/plain' } });
+    } catch (erro) {
+      const causa = (erro.cause && (erro.cause.code || erro.cause.message)) || erro.message;
+      console.error(`[arquivo] falha de rede ao consultar a Wayback Machine (tentativa ${tentativa} de ${TENTATIVAS_DE_CONEXAO}):`, erro.name, causa);
+      if (tentativa < TENTATIVAS_DE_CONEXAO) { await esperar(ESPERA_ENTRE_TENTATIVAS_MS); }
+    }
   }
+  throw new ErroHttp(502, 'Não foi possível falar com a Wayback Machine. Tente de novo em instantes ou cole o texto dos termos.');
 }
 
 /** Devolve { instante, original } da captura mais próxima, ou null se não houver cópia arquivada. */

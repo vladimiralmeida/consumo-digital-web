@@ -34,7 +34,7 @@ export function etapasDoCaso() {
   return [
     { id: 'caso', nome: 'Caso', rota: 'triagem', feita: s.caso, falta: 'Abra um caso e escolha o tipo de problema.', acao: 'Abrir a triagem' },
     { id: 'termos', nome: 'Termos de uso', rota: 'triagem', ancora: 'termos', feita: s.termos, falta: 'Informe o link dos termos e busque a cópia arquivada, ou cole o texto.', acao: 'Informar os termos de uso' },
-    { id: 'analise', nome: 'Análise', rota: 'triagem', ancora: 'termos', feita: s.analise, detalhe: s.caso ? `${s.respondidas} de ${total}` : '', falta: `${total - s.respondidas} dimensão(ões) ainda sem nota. Analise com IA ou responda à mão.`, acao: 'Analisar os termos' },
+    { id: 'analise', nome: 'Análise de opacidade', rota: 'triagem', ancora: 'termos', feita: s.analise, detalhe: s.caso ? `${s.respondidas} de ${total}` : '', falta: `${total - s.respondidas} dimensão(ões) da régua de opacidade ainda sem nota. Analise com IA ou responda à mão.`, acao: 'Analisar a opacidade' },
     { id: 'conferencia', nome: 'Conferência', rota: 'diagnostico', feita: s.conferencia, detalhe: s.naoConferidos ? `${s.naoConferidos} a conferir` : s.sugestoesDaIa ? `${s.sugestoesDaIa} sugestões da IA` : '', falta: s.naoConferidos ? `${s.naoConferidos} trecho(s) não foram encontrados no documento. Confira cada um no original e ajuste.` : 'Revise as notas e os trechos no diagnóstico.', acao: 'Revisar no diagnóstico' },
     { id: 'parecer', nome: 'Parecer', rota: 'parecer', feita: s.parecer, falta: 'Redija o parecer e marque a validação humana.', acao: 'Redigir o parecer' }
   ];

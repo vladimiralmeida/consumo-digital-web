@@ -49,7 +49,7 @@ Nenhum segredo vai para o repositório: `.env` está no `.gitignore`.
 
 ```bash
 npm run lint       # ESLint
-npm test           # 84 testes com cobertura (node:test)
+npm test           # 88 testes com cobertura (node:test)
 npm run verificar  # os dois
 ```
 

@@ -3,7 +3,7 @@
  * completa em um toque) e pelo diagnóstico (dimensão a dimensão).
  */
 import { api } from './api.js';
-import { estado, temResposta } from './estado.js';
+import { estado, respostaDa, temResposta } from './estado.js';
 import { pedirRedesenho } from './painel.js';
 import { descarregarAgendados } from './salvar.js';
 import { confirmar } from './ui.js';
@@ -13,7 +13,13 @@ const CONSULTAS_SIMULTANEAS = 3;
 
 export const analise = () => estado.visao.analise;
 export const dimensao = (numero) => DATA.dims.find((item) => item.n === Number(numero));
-export const dimensoesSemResposta = () => DATA.dims.filter((item) => !temResposta(item.n));
+/** Dimensões ainda sem nota de opacidade: a mesma regra que a trilha usa para a etapa de análise. */
+export const dimensoesSemNota = () => DATA.dims.filter((item) => respostaDa(item.n).nota === null);
+/**
+ * Dimensões que a análise em lote envia à IA: as sem nota, menos as que já têm texto escrito
+ * pelo grupo. Essas ficam para o grupo dar a nota (ou pedir a IA uma a uma, com confirmação).
+ */
+export const dimensoesParaIa = () => dimensoesSemNota().filter((item) => !(temResposta(item.n) && respostaDa(item.n).origem === 'grupo'));
 export const temTextoDosTermos = () => Boolean(estado.pacote && estado.pacote.diagnostico.texto_fonte.trim());
 
 function alterarAnalise(mudancas) {
@@ -60,11 +66,12 @@ export async function consultarIa(numero, substituir = false) {
 }
 
 /**
- * Analisa todas as dimensões que ainda não têm resposta, algumas por vez, mostrando o
- * andamento. Para na primeira falha ou quando a pessoa pede para parar.
+ * Analisa a opacidade de todas as dimensões que ainda não têm nota, algumas por vez, mostrando
+ * o andamento. Para na primeira falha ou quando a pessoa pede para parar. Dimensão com texto
+ * do grupo e sem nota pede confirmação antes de ser substituída.
  */
 export async function analisarPendentes() {
-  const fila = dimensoesSemResposta().map((item) => item.n);
+  const fila = dimensoesParaIa().map((item) => item.n);
   alterarAnalise({ falha: '', lote: { feitas: 0, total: fila.length, parar: false } });
   const trabalhar = async () => {
     while (fila.length && analise().lote && !analise().lote.parar) {

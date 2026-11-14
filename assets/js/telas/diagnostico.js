@@ -1,5 +1,5 @@
 /* Diagnóstico da Opacidade: documento analisado, régua de 14 dimensões, conferência e IA. */
-import { analise, analisarPendentes, consultarIa, dimensao, pararAnalise } from '../analise.js';
+import { analise, analisarPendentes, consultarIa, dimensao, dimensoesParaIa, pararAnalise } from '../analise.js';
 import { estado, alterarPacote, alterarResposta, indiceEmTela, respostaDa, temResposta } from '../estado.js';
 import { baixarCsv, dataDeHoje } from '../exportar.js';
 import { proximoPasso, trilha } from '../fluxo.js';
@@ -123,7 +123,7 @@ function regiaoDaConferencia() {
 
 function cartaoDaIa() {
   const { lote, falha: falhaIa } = analise();
-  const semResposta = DATA.dims.filter((item) => !temResposta(item.n)).length;
+  const semResposta = dimensoesParaIa().length;
   if (!estado.ia.disponivel) {
     return html`<p class="aviso neutro" role="note"><strong>IA desativada neste servidor.</strong> O grupo preenche as respostas à mão; a conferência dos trechos funciona normalmente.</p>`;
   }
@@ -138,7 +138,7 @@ function cartaoDaIa() {
             <progress max="${lote.total}" value="${lote.feitas}"></progress>
           </div>
           <div><button type="button" class="botao" data-a="dg-ia-parar">Parar</button></div>`
-        : html`<div><button type="button" class="botao" data-a="dg-ia-todas"${atributo(!semResposta, 'disabled')}>${semResposta ? `Sugerir com IA as ${semResposta} dimensões sem resposta` : 'Todas as dimensões já têm resposta'}</button></div>`}
+        : html`<div><button type="button" class="botao" data-a="dg-ia-todas"${atributo(!semResposta, 'disabled')}>${semResposta ? `Analisar a opacidade das ${semResposta} dimensões sem nota` : 'Nenhuma dimensão pendente para a IA'}</button></div>`}
     </div>`;
 }
 

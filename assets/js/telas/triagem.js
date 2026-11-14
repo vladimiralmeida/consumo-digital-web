@@ -1,5 +1,5 @@
 /* Triagem: o caso do grupo, o tipo de problema, os termos de uso com análise por IA e as provas. */
-import { analisarPendentes, analise, buscarCopiaArquivada, dimensoesSemResposta, pararAnalise, temTextoDosTermos } from '../analise.js';
+import { analisarPendentes, analise, buscarCopiaArquivada, dimensoesParaIa, dimensoesSemNota, pararAnalise, temTextoDosTermos } from '../analise.js';
 import { criarCaso, excluirCasoAtual } from '../dados.js';
 import { estado, alterarPacote, alternarMarcado, casoAtual, ehGestor, indiceEmTela, respostaDa, temResposta } from '../estado.js';
 import { proximoPasso, trilha } from '../fluxo.js';
@@ -79,7 +79,8 @@ function regiaoDoArquivo() {
 
 function regiaoDaAcao() {
   const { lote, falha } = analise();
-  const pendentes = dimensoesSemResposta().length;
+  const pendentes = dimensoesParaIa().length;
+  const doGrupo = dimensoesSemNota().length - pendentes;
   const total = DATA.dims.length;
   if (!estado.ia.disponivel) {
     return html`<p class="aviso neutro" role="note"><strong>IA desativada neste servidor.</strong> O grupo responde as ${total} perguntas à mão no <a href="#/diagnostico">diagnóstico</a>; a conferência dos trechos funciona normalmente.</p>`;
@@ -87,7 +88,7 @@ function regiaoDaAcao() {
   if (lote) {
     return html`
       <div class="pilha junta" role="status">
-        <span class="apoio">Analisando com ${estado.ia.ferramenta}: ${lote.feitas} de ${lote.total} perguntas respondidas</span>
+        <span class="apoio">Analisando a opacidade com ${estado.ia.ferramenta}: ${lote.feitas} de ${lote.total} perguntas respondidas</span>
         <progress max="${lote.total}" value="${lote.feitas}"></progress>
       </div>
       <div><button type="button" class="botao" data-a="tri-parar"${atributo(lote.parar, 'disabled')}>${lote.parar ? 'Parando…' : 'Parar'}</button></div>`;
@@ -96,18 +97,19 @@ function regiaoDaAcao() {
     ${falha ? html`<p class="aviso erro" role="alert">${falha}</p>` : ''}
     <div class="linha-acoes">
       <button type="button" class="botao primario" data-a="tri-analisar"${atributo(!temTextoDosTermos() || !pendentes, 'disabled')}>
-        ${pendentes === total ? 'Analisar os termos com IA' : pendentes ? `Analisar as ${pendentes} perguntas que faltam` : 'Análise completa'}
+        ${pendentes === total ? 'Analisar a opacidade dos termos com IA' : pendentes ? `Analisar as ${pendentes} perguntas que faltam` : doGrupo ? 'Falta só a nota do grupo' : 'Análise de opacidade completa'}
       </button>
+      ${doGrupo ? html`<span class="legenda">${doGrupo} pergunta(s) têm texto do grupo sem nota: dê a nota no <a href="#/diagnostico">diagnóstico</a>.</span>` : ''}
       ${temTextoDosTermos() ? '' : html`<span class="legenda">Busque a cópia arquivada ou cole o texto dos termos para liberar a análise.</span>`}
     </div>
-    <p class="legenda">A IA (${estado.ia.ferramenta}) lê o texto acima e responde as ${total} perguntas do protocolo com trecho, resumo e nota. O texto é enviado ao serviço de IA. Cada trecho é conferido por comparação com o documento, e a nota final é do grupo.</p>`;
+    <p class="legenda">A IA (${estado.ia.ferramenta}) lê o texto acima e responde as ${total} perguntas do Diagnóstico da Opacidade com trecho, resumo e nota de 0 (claro e favorável) a 3 (omisso ou fortemente desfavorável). O texto é enviado ao serviço de IA. Cada trecho é conferido por comparação com o documento, e a nota final é do grupo.</p>`;
 }
 
 function linhaDoResultado(item) {
   const resposta = respostaDa(item.n);
   const consultando = Boolean(analise().consultando[item.n]);
   const respondida = temResposta(item.n);
-  const situacao = consultando ? 'Consultando a IA…' : respondida ? (resposta.resumo || 'Sem resumo em linguagem simples.') : 'Aguardando análise.';
+  const situacao = consultando ? 'Consultando a IA…' : respondida ? (resposta.resumo || 'Sem resumo em linguagem simples.') + (resposta.nota === null ? ' (sem nota)' : '') : 'Aguardando análise.';
   return html`
     <li>
       <button type="button" class="resultado ${consultando ? 'ativo' : ''}" data-a="tri-revisar" data-i="${item.n}" aria-label="Revisar ${item.name} no diagnóstico">
@@ -120,11 +122,12 @@ function linhaDoResultado(item) {
 }
 
 function resultados() {
-  const respondidas = DATA.dims.filter((item) => temResposta(item.n)).length;
-  if (!respondidas && !analise().lote) { return ''; }
+  const comNota = DATA.dims.length - dimensoesSemNota().length;
+  const iniciada = DATA.dims.some((item) => temResposta(item.n));
+  if (!iniciada && !analise().lote) { return ''; }
   return html`
     <div class="pilha">
-      <div class="cartao-topo"><h3>Resultado por pergunta</h3>${emblema(`${respondidas} de ${DATA.dims.length}`)}</div>
+      <div class="cartao-topo"><h3>Opacidade por pergunta</h3>${emblema(`${comNota} de ${DATA.dims.length} com nota`)}</div>
       <ul class="resultados">${DATA.dims.map(linhaDoResultado)}</ul>
       <p class="legenda">Toque em uma linha para revisar o trecho, a nota e a conferência no diagnóstico.</p>
     </div>`;
@@ -136,7 +139,7 @@ function cartaoDosTermos() {
     <section class="cartao" id="termos" tabindex="-1" aria-labelledby="termos-titulo">
       <div class="pilha junta">
         <h2 id="termos-titulo">Termos de uso</h2>
-        <p class="apoio">Informe onde estão os termos da plataforma. A análise responde as mesmas perguntas do diagnóstico e leva o caso direto para a conferência.</p>
+        <p class="apoio">Informe onde estão os termos da plataforma. A análise de opacidade responde as mesmas perguntas do diagnóstico e leva o caso direto para a conferência.</p>
       </div>
       ${campo('tri-plataforma', 'Plataforma', diagnostico.plataforma, 'tri-doc', { indice: 'plataforma', maximo: 120, exemplo: 'Nome da plataforma ou do serviço' })}
       ${campo('tri-url', 'Link original dos termos', diagnostico.documento_url, 'tri-doc', { indice: 'documento_url', tipo: 'url', exemplo: 'https://' })}
