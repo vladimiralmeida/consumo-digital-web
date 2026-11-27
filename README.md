@@ -53,12 +53,6 @@ npm test           # 110 testes com cobertura (node:test)
 npm run verificar  # os dois
 ```
 
-## Deploy automático
-
-O site em produção (https://consumo.lexcode.tech) é publicado a partir da branch `main` de `edilsonfs/consumo-digital-web`. Cada `git push` nessa branch avisa o servidor por um webhook, que baixa o código, reconstrói a imagem e troca a versão no ar em cerca de um minuto. Push em outras branches não publica.
-
-Não há revisão nem integração contínua no caminho: o que entra na `main` vai direto ao ar. Antes de subir, rode `npm run verificar` (lint e testes) e só envie se passar. As senhas e a chave da IA ficam nas variáveis do servidor, fora do repositório; o banco fica em um volume e sobrevive a cada publicação.
-
 ## Publicar
 
 A aplicação precisa de um servidor; o **GitHub Pages não a executa** (ali aparece um aviso explicando). O `Dockerfile` gera uma imagem pronta para qualquer hospedagem de contêiner. Monte um volume em `/data`, defina as variáveis acima e coloque HTTPS na frente.
